@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1600" preserveAspectRatio="none">
+  <filter id="noise">
+    <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" seed="23"/>
+    <feColorMatrix type="saturate" values="0"/>
+    <feComponentTransfer>
+      <feFuncA type="table" tableValues="0 0.32"/>
+    </feComponentTransfer>
+  </filter>
+  <rect width="900" height="1600" fill="#030506"/>
+  <rect width="900" height="1600" filter="url(#noise)" opacity="0.46"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-30 118c104 44 120-72 224-31 60 24 93 17 129-22" stroke="#0c2e84" stroke-width="3" opacity=".42"/>
+    <path d="M95 184c84-41 124 12 186-26 25-16 38-41 57-61" stroke="#1554e8" stroke-width="1.6" opacity=".34"/>
+    <path d="M685 67c76 64 19 153 117 178 42 11 82-4 122 19" stroke="#0f3fb8" stroke-width="2" opacity=".3"/>
+    <path d="M744 452c-62 60-158 35-180 118-12 44 4 82-37 118" stroke="#144bd1" stroke-width="2.5" opacity=".32"/>
+    <path d="M840 802c-119-40-152 76-253 42-68-23-92-3-138 42" stroke="#0b2d83" stroke-width="2" opacity=".45"/>
+    <path d="M-90 640c97-3 94 82 194 74 67-5 86 38 90 92" stroke="#1554e8" stroke-width="1.8" opacity=".24"/>
+    <path d="M132 1288c75-66 127-10 197-64 48-37 42-84 101-108" stroke="#0d399e" stroke-width="2.2" opacity=".32"/>
+    <path d="M626 1398c-38-71 15-118 76-124 67-7 99-46 122-88" stroke="#174cff" stroke-width="1.4" opacity=".24"/>
+  </g>
+</svg>

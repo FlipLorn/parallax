@@ -1,0 +1,159 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #030712;
+  --foreground: #f9fafb;
+  --card: #0b0f19;
+  --card-foreground: #f9fafb;
+  --popover: #0b0f19;
+  --popover-foreground: #f9fafb;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #111827;
+  --secondary-foreground: #f9fafb;
+  --muted: #111827;
+  --muted-foreground: #9ca3af;
+  --accent: #3b82f6;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #1f2937;
+  --input: #1f2937;
+  --ring: #3b82f6;
+  --radius: 0.75rem;
+  --canvas: #030712;
+  --paper: #0b0f19;
+  --soft: #111827;
+  --ink: #f9fafb;
+  --ink-2: #e5e7eb;
+  --ink-3: #9ca3af;
+  --positive: #10b981;
+  --negative: #ef4444;
+  --warning: #f59e0b;
+}
+
+.dark {
+  --background: #030712;
+  --foreground: #f9fafb;
+  --card: #0b0f19;
+  --card-foreground: #f9fafb;
+  --popover: #0b0f19;
+  --popover-foreground: #f9fafb;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #111827;
+  --secondary-foreground: #f9fafb;
+  --muted: #111827;
+  --muted-foreground: #9ca3af;
+  --accent: #3b82f6;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --border: #1f2937;
+  --input: #1f2937;
+  --ring: #3b82f6;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--background);
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  letter-spacing: -0.011em;
+  overflow-x: hidden;
+}
+
+/* Vetra Orbit & Glow Animations */
+@keyframes orbit {
+  0% {
+    transform: rotate(0deg) translateY(calc(-1 * var(--radius) * 1px)) rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg) translateY(calc(-1 * var(--radius) * 1px)) rotate(-360deg);
+  }
+}
+
+.animate-orbit {
+  animation: orbit var(--duration) linear infinite;
+}
+
+@keyframes imageGlow {
+  0%, 100% {
+    opacity: 0.45;
+    filter: blur(5rem);
+  }
+  50% {
+    opacity: 0.85;
+    filter: blur(8rem);
+  }
+}
+
+.animate-image-glow {
+  animation: imageGlow 6s ease-in-out infinite;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
+
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

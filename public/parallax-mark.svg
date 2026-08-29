@@ -1,0 +1,29 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="128" fill="#030712"/>
+  <rect x="16" y="16" width="480" height="480" rx="112" stroke="url(#borderGlow)" stroke-width="8" opacity="0.6"/>
+  
+  <defs>
+    <linearGradient id="borderGlow" x1="0" y1="0" x2="512" y2="512">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="pxGrad" x1="120" y1="120" x2="392" y2="392">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+    <filter id="shadowGlow" x="0" y="0" width="512" height="512" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+    </filter>
+  </defs>
+
+  {/* Background Glow */}
+  <circle cx="256" cy="256" r="140" fill="#2563EB" opacity="0.25" filter="url(#shadowGlow)"/>
+
+  {/* Monogram P Path */}
+  <path d="M140 130 H260 C315 130 350 165 350 215 C350 265 315 300 260 300 H200 V382 H140 V130 Z M200 185 V245 H255 C280 245 292 235 292 215 C292 195 280 185 255 185 H200 Z" fill="url(#pxGrad)"/>
+
+  {/* Dynamic Crosshair Vector Energy Beam (The X Vector) */}
+  <path d="M290 270 L380 382 H320 L250 295 L290 270 Z" fill="#38BDF8"/>
+  <circle cx="350" cy="215" r="16" fill="#38BDF8"/>
+</svg>
