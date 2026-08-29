@@ -1,18 +1,19 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Loader2, ShoppingCart, Tag, Layers3 } from "lucide-react";
+import { Loader2, Search, ShoppingCart, Tag, Layers3, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { WalletConnectButton } from "@/components/wallet/wallet-connect-button";
 import { useSolanaWallet } from "@/components/wallet/solana-wallet-provider";
 import { TxFlowDialog } from "@/components/marketplace/tx-flow-dialog";
 import type { MmmPoolCreateInput, NftListing, NftToken, PrepareTransactionData } from "@/lib/aggregator/types";
+import type { NftCollectionSummary } from "@/lib/magiceden/types";
 
 const FEATURED_COLLECTIONS = [
-  { symbol: "y00ts", label: "y00ts" },
-  { symbol: "okay_bears", label: "Okay Bears" },
-  { symbol: "degods", label: "DeGods" },
+  { symbol: "y00ts", name: "y00ts" },
+  { symbol: "okay_bears", name: "Okay Bears" },
+  { symbol: "degods", name: "DeGods" },
 ];
 
 type TabId = "buy" | "sell" | "mmm";
@@ -21,7 +22,12 @@ export function MarketplaceHub() {
   const { publicKey, connected, connect, walletProvider } = useSolanaWallet();
   const [tab, setTab] = useState<TabId>("buy");
 
-  const [collectionSymbol, setCollectionSymbol] = useState("y00ts");
+  const [collectionSymbol, setCollectionSymbol] = useState<string | null>(null);
+  const [selectedCollection, setSelectedCollection] = useState<NftCollectionSummary | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<NftCollectionSummary[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [listings, setListings] = useState<NftListing[]>([]);
   const [listingsLoading, setListingsLoading] = useState(false);
   const [listingsError, setListingsError] = useState<string | null>(null);
@@ -57,7 +63,9 @@ export function MarketplaceHub() {
     setListingsLoading(true);
     setListingsError(null);
     try {
-      const response = await fetch(`/api/marketplace/collections/${encodeURIComponent(symbol)}/listings`);
+      const response = await fetch(
+        `/api/marketplace/collections/${encodeURIComponent(symbol)}/listings?limit=48`,
+      );
       const json = await response.json();
       if (!response.ok) throw new Error(json.error?.message ?? "Failed to load listings");
       setListings(json.data ?? []);
@@ -67,6 +75,23 @@ export function MarketplaceHub() {
     } finally {
       setListingsLoading(false);
     }
+  }, []);
+
+  const selectCollection = useCallback((collection: NftCollectionSummary) => {
+    setSelectedCollection(collection);
+    setCollectionSymbol(collection.symbol);
+    setSearchQuery(collection.name);
+    setSearchResults([]);
+    setSearchError(null);
+  }, []);
+
+  const clearSelectedCollection = useCallback(() => {
+    setSelectedCollection(null);
+    setCollectionSymbol(null);
+    setListings([]);
+    setListingsError(null);
+    setSearchQuery("");
+    setSearchResults([]);
   }, []);
 
   const loadWalletTokens = useCallback(async (wallet: string) => {
@@ -84,8 +109,55 @@ export function MarketplaceHub() {
   }, []);
 
   useEffect(() => {
-    if (tab === "buy") void loadListings(collectionSymbol);
+    if (tab !== "buy" || !collectionSymbol) return;
+    void loadListings(collectionSymbol);
   }, [tab, collectionSymbol, loadListings]);
+
+  useEffect(() => {
+    if (tab !== "buy") return;
+
+    const query = searchQuery.trim();
+    if (query.length < 2) {
+      setSearchResults([]);
+      setSearchError(null);
+      setSearchLoading(false);
+      return;
+    }
+
+    if (selectedCollection && query.toLowerCase() === selectedCollection.name.toLowerCase()) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => {
+      void (async () => {
+        setSearchLoading(true);
+        setSearchError(null);
+        try {
+          const response = await fetch(
+            `/api/marketplace/collections/search?q=${encodeURIComponent(query)}`,
+            { signal: controller.signal },
+          );
+          const json = await response.json();
+          if (!response.ok) throw new Error(json.error?.message ?? "Collection search failed");
+          setSearchResults(json.data ?? []);
+        } catch (error) {
+          if (controller.signal.aborted) return;
+          setSearchResults([]);
+          setSearchError(error instanceof Error ? error.message : "Collection search failed");
+        } finally {
+          if (!controller.signal.aborted) setSearchLoading(false);
+        }
+      })();
+    }, 300);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeout);
+    };
+  }, [searchQuery, selectedCollection, tab]);
 
   useEffect(() => {
     if (tab === "sell" && publicKey) void loadWalletTokens(publicKey);
@@ -205,23 +277,143 @@ export function MarketplaceHub() {
 
       {tab === "buy" ? (
         <section className="grid gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-xs text-muted-foreground">Collection</span>
-            {FEATURED_COLLECTIONS.map((collection) => (
-              <button
-                key={collection.symbol}
-                type="button"
-                onClick={() => setCollectionSymbol(collection.symbol)}
-                className={`rounded px-3 py-1.5 font-mono text-xs transition-colors ${
-                  collectionSymbol === collection.symbol
-                    ? "border border-primary/40 bg-primary/15 text-primary"
-                    : "border border-border text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {collection.label}
-              </button>
-            ))}
+          <div className="rounded-lg border border-border bg-card/90 p-4">
+            <label className="block font-mono text-[10px] uppercase text-muted-foreground">
+              Search collection
+            </label>
+            <div className="relative mt-2">
+              <div className="flex items-center gap-2 rounded-md border border-border bg-background/80 px-3 py-2">
+                <Search className="size-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => {
+                    setSearchQuery(event.target.value);
+                    if (selectedCollection && event.target.value !== selectedCollection.name) {
+                      setSelectedCollection(null);
+                      setCollectionSymbol(null);
+                      setListings([]);
+                    }
+                  }}
+                  placeholder="Search by collection name (e.g. DeGods, Okay Bears)..."
+                  className="w-full bg-transparent font-mono text-xs text-foreground placeholder:text-muted-foreground outline-none"
+                />
+                {searchQuery ? (
+                  <button
+                    type="button"
+                    onClick={clearSelectedCollection}
+                    className="text-muted-foreground transition-colors hover:text-foreground"
+                    aria-label="Clear search"
+                  >
+                    <X className="size-4" />
+                  </button>
+                ) : null}
+              </div>
+
+              {searchLoading ? (
+                <div className="absolute z-20 mt-2 flex w-full items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm text-muted-foreground shadow-lg">
+                  <Loader2 className="size-4 animate-spin" />
+                  Searching Magic Eden collections…
+                </div>
+              ) : null}
+
+              {!searchLoading && searchResults.length > 0 ? (
+                <div className="absolute z-20 mt-2 max-h-80 w-full overflow-y-auto rounded-md border border-border bg-card shadow-lg">
+                  {searchResults.map((collection) => (
+                    <button
+                      key={collection.symbol}
+                      type="button"
+                      onClick={() => selectCollection(collection)}
+                      className="flex w-full items-center gap-3 border-b border-border/60 px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-secondary/60"
+                    >
+                      {collection.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={collection.image} alt="" className="size-10 rounded object-cover" />
+                      ) : (
+                        <div className="size-10 rounded bg-background" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{collection.name}</p>
+                        <p className="truncate font-mono text-[10px] text-muted-foreground">{collection.symbol}</p>
+                      </div>
+                      <div className="text-right font-mono text-[10px] text-muted-foreground">
+                        {collection.listedCount != null ? <p>{collection.listedCount} listed</p> : null}
+                        {collection.floorPrice != null ? (
+                          <p className="text-primary">{collection.floorPrice.toFixed(3)} SOL floor</p>
+                        ) : null}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {!searchLoading && searchError ? (
+                <p className="mt-2 text-sm text-destructive">{searchError}</p>
+              ) : null}
+
+              {!searchLoading &&
+              searchQuery.trim().length >= 2 &&
+              searchResults.length === 0 &&
+              !searchError &&
+              !selectedCollection ? (
+                <p className="mt-2 text-sm text-muted-foreground">No collections matched that search.</p>
+              ) : null}
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="font-mono text-[10px] uppercase text-muted-foreground">Quick picks</span>
+              {FEATURED_COLLECTIONS.map((collection) => (
+                <button
+                  key={collection.symbol}
+                  type="button"
+                  onClick={() =>
+                    selectCollection({
+                      symbol: collection.symbol,
+                      name: collection.name,
+                    })
+                  }
+                  className={`rounded px-3 py-1.5 font-mono text-xs transition-colors ${
+                    collectionSymbol === collection.symbol
+                      ? "border border-primary/40 bg-primary/15 text-primary"
+                      : "border border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {collection.name}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {selectedCollection ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card/90 p-4">
+              <div className="flex min-w-0 items-center gap-3">
+                {selectedCollection.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={selectedCollection.image} alt="" className="size-12 rounded object-cover" />
+                ) : (
+                  <div className="size-12 rounded bg-background" />
+                )}
+                <div className="min-w-0">
+                  <p className="truncate text-lg font-semibold">{selectedCollection.name}</p>
+                  <p className="font-mono text-xs text-muted-foreground">{selectedCollection.symbol}</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 font-mono text-xs text-muted-foreground">
+                {selectedCollection.listedCount != null ? (
+                  <span>{selectedCollection.listedCount} listed</span>
+                ) : null}
+                {selectedCollection.floorPrice != null ? (
+                  <span className="text-primary">{selectedCollection.floorPrice.toFixed(3)} SOL floor</span>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-border bg-card/40 p-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                Search for a collection by name, pick one from the results, then browse NFTs for sale.
+              </p>
+            </div>
+          )}
 
           {listingsLoading ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -229,6 +421,10 @@ export function MarketplaceHub() {
             </div>
           ) : null}
           {listingsError ? <p className="text-sm text-destructive">{listingsError}</p> : null}
+
+          {!listingsLoading && selectedCollection && listings.length === 0 && !listingsError ? (
+            <p className="text-sm text-muted-foreground">No active listings found for this collection.</p>
+          ) : null}
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {listings.map((listing) => (
